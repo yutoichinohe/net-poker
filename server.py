@@ -29,7 +29,9 @@ class WorkerThread(threading.Thread):
         self.op = ''
         self.buffer = ''
         self.action = ''
-        self.action_value = 0
+        self.action_value = -1
+        self.minimum_bet = 0
+        self.minimum_raise = 0
 
 
     def run(self):
@@ -56,13 +58,33 @@ class WorkerThread(threading.Thread):
                         if self.action in self.buffer[1]:
                             if self.action == 'f' or self.action == 'c':
                                 pass
-                            elif self.action == 'b' or self.action == 'r':
-                                while self.action_value <= 0:
-                                    self.send_message('Value? : ')
+                            elif self.action == 'b':
+                                _str = 'Value? (%d): '%self.minimum_bet
+                                while self.action_value < self.minimum_bet:
+                                    self.send_message(_str)
                                     try:
                                         self.action_value = int(self.recv_message().strip())
                                     except ValueError:
-                                        self.action_value = 0
+                                        self.action_value = -1
+
+                                    if self.action_value == 0:
+                                        self.action = ''
+                                        self.action_value = -1
+                                        break
+
+                            elif self.action == 'r':
+                                _str = 'Value? (%d): '%self.minimum_raise
+                                while self.action_value < self.minimum_raise:
+                                    self.send_message(_str)
+                                    try:
+                                        self.action_value = int(self.recv_message().strip())
+                                    except ValueError:
+                                        self.action_value = -1
+
+                                    if self.action_value == 0:
+                                        self.action = ''
+                                        self.action_value = -1
+                                        break
 
                             else:
                                 self.action = ''
@@ -73,6 +95,8 @@ class WorkerThread(threading.Thread):
                     self.ready = True
                     self.buffer = ''
                     self.op = ''
+                    self.minimum_bet = 0
+                    self.minimum_raise = 0
 
                 elif self.op == 'press_return':
                     self.send_message('Continue? [RET]')
@@ -90,7 +114,9 @@ class WorkerThread(threading.Thread):
         self.set_op('askname')
 
 
-    def send_action_prompt(self,options):
+    def send_action_prompt(self,options,b,r):
+        self.minimum_bet = b
+        self.minimum_raise = r
         self.buffer = options
         self.set_op('action')
 
@@ -112,7 +138,7 @@ class WorkerThread(threading.Thread):
         self.ready = False
         self.buffer = ''
         self.action = ''
-        self.action_value = 0
+        self.action_value = -1
 
 
     def send_message(self,message):
@@ -169,8 +195,8 @@ class PokerServer:
                 time.sleep(1.0)
                 cp = self.g.current_player
                 self.threads[cp].send_action_prompt(
-                    self.action_options(
-                        self.g.players[cp].available_actions))
+                    self.action_options(self.g.players[cp].available_actions),
+                    self.g.minimum_bet,self.g.minimum_raise)
                 while not self.threads[cp].ready:
                     pass
 

@@ -60,10 +60,14 @@ class Game:
             self.players.append(Player(stack=init_stack))
             self.zerobets.append(0)
 
+        self.minimum_bet   = 0
+        self.minimum_raise = 0
         self.set_blinds(blinds)
+
         self.button = 0
-        self.reset()
         self.action_history = []
+        self.reset()
+
 
 
     def reset(self):
@@ -119,6 +123,7 @@ class Game:
 
     def proceed(self):
         if self.stage == Deal:
+            self.reset_minimum()
             self.collect_pot()
             self.stage = Preflop
             self.next_player(candidate=(self.sb+2)%self.nplayers)
@@ -128,6 +133,7 @@ class Game:
             self.reset_at_least_one_action()
 
         elif self.stage == Preflop:
+            self.reset_minimum()
             self.collect_pot()
             self.stage = Flop
             self.next_player(candidate=(self.button+1)%self.nplayers)
@@ -136,6 +142,7 @@ class Game:
             self.reset_at_least_one_action()
 
         elif self.stage == Flop:
+            self.reset_minimum()
             self.collect_pot()
             self.stage = Turn
             self.next_player(candidate=(self.button+1)%self.nplayers)
@@ -144,6 +151,7 @@ class Game:
             self.reset_at_least_one_action()
 
         elif self.stage == Turn:
+            self.reset_minimum()
             self.collect_pot()
             self.stage = River
             self.next_player(candidate=(self.button+1)%self.nplayers)
@@ -182,7 +190,7 @@ class Game:
 
     def set_blinds(self,blinds):
         self.blinds = blinds
-        self.min_bet = blinds[1]
+        self.minimum_bet = blinds[1]
 
 
     def set_stack(self,player,stack):
@@ -210,7 +218,6 @@ class Game:
 
 
     def is_stage_done(self):
-
         if [x.folded for x in self.players].count(False) == 1:
             for i in xrange(self.nplayers):
                 if not self.players[i].folded:
@@ -318,11 +325,13 @@ class Game:
         self.update_current_pot()
         self.update_available_actions()
         self.players[player].at_least_one_action = True
+        self.minimum_raise = value+value
         if not ante:
             self.action_history_update('%s betted %d'%(self.players[player].name,value))
 
 
     def a_raiseto(self,player,value):
+        _max = max(self.bets)
         _cur = self.bets[player]
         _dif = value - _cur
         self.bets[player] += _dif
@@ -330,19 +339,21 @@ class Game:
         self.update_current_pot()
         self.update_available_actions()
         self.players[player].at_least_one_action = True
+        self.minimum_raise = 2*value-_max
         self.action_history_update('%s raised to %d'%(self.players[player].name,value))
 
 
-    def a_raiseby(self,player,value):
-        _max = max(self.bets)
-        _cur = self.bets[player]
-        _dif = _max + value - _cur
-        self.bets[player] += _dif
-        self.players[player].stack -= _dif
-        self.update_current_pot()
-        self.update_available_actions()
-        self.players[player].at_least_one_action = True
-        self.action_history_update('%s raised by %d'%(self.players[player].name,value))
+    # def a_raiseby(self,player,value):
+    #     _max = max(self.bets)
+    #     _cur = self.bets[player]
+    #     _dif = _max + value - _cur
+    #     self.bets[player] += _dif
+    #     self.players[player].stack -= _dif
+    #     self.update_current_pot()
+    #     self.update_available_actions()
+    #     self.players[player].at_least_one_action = True
+    #     self.minimum_raise = value+_dif
+    #     self.action_history_update('%s raised by %d'%(self.players[player].name,value))
 
 
     ### utilities
@@ -378,11 +389,15 @@ class Game:
 
 
     def action_history_update(self,history):
-
         if len(self.action_history) > 1024:
             self.action_history.pop(0)
 
         self.action_history.append('[%s]  '%(datetime.now().strftime('%H:%M:%S'))+history)
+
+
+    def reset_minimum(self):
+        self.minimum_bet = self.blinds[1]
+        self.minimum_raise = 0
 
 
 
