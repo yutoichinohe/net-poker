@@ -267,6 +267,10 @@ class PokerServer:
             _str += '[R]aise '
             _lst.append('r')
 
+        # if poker.Allin in available_actions:
+        #     _str += '[A]llin '
+        #     _lst.append('a')
+
         return _str.strip(), _lst
 
 

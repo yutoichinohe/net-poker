@@ -26,6 +26,7 @@ Check = 2
 Call  = 3
 Bet   = 4
 Raise = 5
+# Allin = 6
 
 ## Stage done
 StageEnd = 1
@@ -42,6 +43,7 @@ class Player:
         self.hand   = hand
         self.best_hand = []
         self.folded = False
+        # self.allin = False
         self.available_actions = []
         self.at_least_one_action = False
 
@@ -97,6 +99,7 @@ class Game:
             self.players[i].hand = d.draw_top(2)
             self.players[i].best_hand = []
             self.players[i].folded = False
+            # self.players[i].allin = False
             self.players[i].available_actions = []
             self.players[i].at_least_one_action = False
 
@@ -199,22 +202,50 @@ class Game:
 
     def update_available_actions(self):
         if max(self.bets) == 0:
-            ### fold,check,bet
             for x in self.players:
                 x.available_actions = [Fold,Check,Bet]
 
         elif self.stage == Preflop and max(self.bets) == self.blinds[1]:
-            ### fold,call,raise
-            ### check,fold,raise
             for x in self.players:
                 x.available_actions = [Fold,Call,Raise]
 
             self.players[self.bb].available_actions = [Fold,Check,Raise]
+
         else:
-            ### fold,call,raise
             for x in self.players:
                 x.available_actions = [Fold,Call,Raise]
 
+
+    # def update_available_actions(self):
+    #     if max(self.bets) == 0:
+    #         for x in self.players:
+    #             if x.stack < self.minimum_bet:
+    #                 x.available_actions = [Fold,Check,Allin]
+    #             else:
+    #                 x.available_actions = [Fold,Check,Bet]
+
+    #     elif self.stage == Preflop and max(self.bets) == self.blinds[1]:
+    #         for x in self.players:
+    #             if x.stack < max(self.bets):
+    #                 x.available_actions = [Fold,Allin]
+    #             elif x.stack < self.minimum_raise:
+    #                 x.available_actions = [Fold,Call,Allin]
+    #             else:
+    #                 x.available_actions = [Fold,Call,Raise]
+
+    #         if self.players[self.bb].stack < self.minimum_raise:
+    #             self.players[self.bb].available_actions = [Fold,Check,Allin]
+    #         else:
+    #             self.players[self.bb].available_actions = [Fold,Check,Raise]
+
+    #     else:
+    #         for x in self.players:
+    #             if x.stack < max(self.bets):
+    #                 x.available_actions = [Fold,Allin]
+    #             elif x.stack < self.minimum_raise:
+    #                 x.available_actions = [Fold,Call,Allin]
+    #             else:
+    #                 x.available_actions = [Fold,Call,Raise]
 
 
     def is_stage_done(self):
@@ -356,6 +387,23 @@ class Game:
     #     self.action_history_update('%s raised by %d'%(self.players[player].name,value))
 
 
+    # def a_allin(self,player):
+    #     _stack = self.players[player].stack
+    #     _max = max(self.bets)
+    #     if stack >= self.minimum_raise:
+    #         pass
+    #     elif stack >= _max:
+    #         pass
+    #     elif stack >= self.minimum_bet:
+    #         pass
+    #     else:
+    #         pass
+
+    #     self.players[player].allin = True
+    #     self.update_available_actions()
+    #     self.players[player].at_least_one_action = True
+
+
     ### utilities
 
     def clear_bets(self):
@@ -377,6 +425,7 @@ class Game:
         else:
             nextp = (self.current_player+1)%self.nplayers
 
+        # while self.players[nextp % self.nplayers].folded or self.players[nextp % self.nplayers].allin:
         while self.players[nextp % self.nplayers].folded:
             nextp += 1
 
