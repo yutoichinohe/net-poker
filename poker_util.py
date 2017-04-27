@@ -211,13 +211,13 @@ def card_to_str(c):
 
     if Emoji:
         if s == 0:
-            tmp += '♠️'
+            tmp += '♠️ '
         elif s == 1:
-            tmp += '❤️'
+            tmp += '❤️ '
         elif s == 2:
-            tmp += '♦️'
+            tmp += '♦️ '
         elif s == 3:
-            tmp += '♣️'
+            tmp += '♣️ '
     else:
         if s == 0:
             tmp += 's'
