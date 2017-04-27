@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python
 
 import sys, os, math, commands
@@ -5,6 +6,8 @@ import random, itertools
 import numpy as np
 
 #### Constant
+
+Emoji = False
 
 #        s  h  d  c
 Suits = (0, 1, 2, 3)
@@ -160,37 +163,6 @@ def best_hand(h,b):
 
 
 
-def card_to_str(c):
-    tmp = ''
-
-    r,s = c
-
-    if r == 12:
-        tmp += 'A'
-    elif r == 11:
-        tmp += 'K'
-    elif r == 10:
-        tmp += 'Q'
-    elif r == 9:
-        tmp += 'J'
-    elif r == 8:
-        tmp += 'T'
-    else:
-        tmp += '%d'%(r+2)
-
-    if s == 0:
-        tmp += 's'
-    elif s == 1:
-        tmp += 'h'
-    elif s == 2:
-        tmp += 'd'
-    elif s == 3:
-        tmp += 'c'
-
-    return tmp
-
-
-
 def hand_to_str(h):
     a = [card_to_str(x) for x in h]
     return ' '.join(a)
@@ -217,3 +189,43 @@ def handrank_to_str(r):
     elif r == StraightFlush:
         return 'StraightFlush'
 
+
+
+def card_to_str(c):
+    tmp = ''
+
+    r,s = c
+
+    if r == 12:
+        tmp += 'A'
+    elif r == 11:
+        tmp += 'K'
+    elif r == 10:
+        tmp += 'Q'
+    elif r == 9:
+        tmp += 'J'
+    elif r == 8:
+        tmp += 'T'
+    else:
+        tmp += '%d'%(r+2)
+
+    if Emoji:
+        if s == 0:
+            tmp += '♠️'
+        elif s == 1:
+            tmp += '❤️'
+        elif s == 2:
+            tmp += '♦️'
+        elif s == 3:
+            tmp += '♣️'
+    else:
+        if s == 0:
+            tmp += 's'
+        elif s == 1:
+            tmp += 'h'
+        elif s == 2:
+            tmp += 'd'
+        elif s == 3:
+            tmp += 'c'
+
+    return tmp
