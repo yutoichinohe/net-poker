@@ -43,7 +43,7 @@ class Player:
         self.hand   = hand
         self.best_hand = []
         self.folded = False
-        # self.allin = False
+        self.allin = False
         self.available_actions = []
         self.at_least_one_action = False
 
@@ -53,6 +53,8 @@ class Game:
     def __init__(self,nplayers,init_stack=500,blinds=(1,2,0)):
         if nplayers > 23:
             raise RuntimeError, 'too many players'
+        elif nplayers < 2:
+            raise RuntimeError, 'find a friend'
         else:
             self.nplayers = nplayers
 
@@ -99,7 +101,7 @@ class Game:
             self.players[i].hand = d.draw_top(2)
             self.players[i].best_hand = []
             self.players[i].folded = False
-            # self.players[i].allin = False
+            self.players[i].allin = False
             self.players[i].available_actions = []
             self.players[i].at_least_one_action = False
 
@@ -256,13 +258,18 @@ class Game:
 
             return AllFold
 
-        if all([x.folded or x.at_least_one_action for x in self.players]):
+        if (all([x.folded or x.at_least_one_action or x.allin for x in self.players]) or
+            [x.folded or x.allin for x in self.players].count(False) == 1):
             _lst = []
+            _maxallin = 0
             for i in xrange(self.nplayers):
-                if not self.players[i].folded:
+                if self.players[i].allin and self.bets[i] > _maxallin:
+                    _maxallin = self.bets[i]
+
+                if not (self.players[i].folded or self.players[i].allin):
                     _lst.append(self.bets[i])
 
-            if max(_lst) == min(_lst):
+            if not _lst or max(_lst) == min(_lst) and min(_lst) >= _maxallin:
                 if self.stage == River:
                     return ShowDown
                 else:
@@ -344,6 +351,9 @@ class Game:
         self.update_current_pot()
         self.update_available_actions()
         self.players[player].at_least_one_action = True
+        if self.players[player].stack == 0:
+            self.players[player].allin = True
+
         if _dif == 0:
             self.action_history_update('%s checked'%(self.players[player].name))
         else:
@@ -357,6 +367,9 @@ class Game:
         self.update_available_actions()
         self.players[player].at_least_one_action = True
         self.minimum_raise = value+value
+        if self.players[player].stack == 0:
+            self.players[player].allin = True
+
         if not ante:
             self.action_history_update('%s betted %d'%(self.players[player].name,value))
 
@@ -371,6 +384,9 @@ class Game:
         self.update_available_actions()
         self.players[player].at_least_one_action = True
         self.minimum_raise = 2*value-_max
+        if self.players[player].stack == 0:
+            self.players[player].allin = True
+
         self.action_history_update('%s raised to %d'%(self.players[player].name,value))
 
 
@@ -425,9 +441,10 @@ class Game:
         else:
             nextp = (self.current_player+1)%self.nplayers
 
-        # while self.players[nextp % self.nplayers].folded or self.players[nextp % self.nplayers].allin:
-        while self.players[nextp % self.nplayers].folded:
-            nextp += 1
+
+        if not all([x.folded or x.allin for x in self.players]):
+            while self.players[nextp % self.nplayers].folded or self.players[nextp % self.nplayers].allin:
+                nextp += 1
 
         self.current_player = nextp % self.nplayers
 

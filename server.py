@@ -59,33 +59,9 @@ class WorkerThread(threading.Thread):
                             if self.action == 'f' or self.action == 'c':
                                 pass
                             elif self.action == 'b':
-                                _str = 'Value? (%d): '%self.minimum_bet
-                                while self.action_value < self.minimum_bet:
-                                    self.send_message(_str)
-                                    try:
-                                        self.action_value = int(self.recv_message().strip())
-                                    except ValueError:
-                                        self.action_value = -1
-
-                                    if self.action_value == 0:
-                                        self.action = ''
-                                        self.action_value = -1
-                                        break
-
+                                self.loop_until_valid_value(self.minimum_bet)
                             elif self.action == 'r':
-                                _str = 'Value? (%d): '%self.minimum_raise
-                                while self.action_value < self.minimum_raise:
-                                    self.send_message(_str)
-                                    try:
-                                        self.action_value = int(self.recv_message().strip())
-                                    except ValueError:
-                                        self.action_value = -1
-
-                                    if self.action_value == 0:
-                                        self.action = ''
-                                        self.action_value = -1
-                                        break
-
+                                self.loop_until_valid_value(self.minimum_raise)
                             else:
                                 self.action = ''
                         else:
@@ -114,9 +90,10 @@ class WorkerThread(threading.Thread):
         self.set_op('askname')
 
 
-    def send_action_prompt(self,options,b,r):
+    def send_action_prompt(self,options,b,r,s):
         self.minimum_bet = b
         self.minimum_raise = r
+        self.stack = s
         self.buffer = options
         self.set_op('action')
 
@@ -154,6 +131,21 @@ class WorkerThread(threading.Thread):
                 break
 
 
+    def loop_until_valid_value(self,minvalue):
+        _str = 'Value? (%d-%d): '%(minvalue,self.stack)
+        while self.action_value < minvalue or self.action_value > self.stack:
+            self.send_message(_str)
+            try:
+                self.action_value = int(self.recv_message().strip())
+            except ValueError:
+                self.action_value = -1
+
+            if self.action_value == 0:
+                self.action = ''
+                self.action_value = -1
+                break
+
+
 
 class PokerServer:
     def __init__(self,nplayers,host,port):
@@ -171,6 +163,8 @@ class PokerServer:
             thr.daemon = True
             thr.start()
             self.threads.append(thr)
+
+        print('Server ready')
 
 
     def init_game(self,init_stack=500,blinds=(1,2,0)):
@@ -196,7 +190,7 @@ class PokerServer:
                 cp = self.g.current_player
                 self.threads[cp].send_action_prompt(
                     self.action_options(self.g.players[cp].available_actions),
-                    self.g.minimum_bet,self.g.minimum_raise)
+                    self.g.minimum_bet,self.g.minimum_raise,self.g.players[cp].stack+self.g.bets[cp])
                 while not self.threads[cp].ready:
                     pass
 
@@ -285,6 +279,8 @@ class PokerServer:
                 _str = '*  '
             elif self.g.players[i].folded:
                 _str = 'x  '
+            elif self.g.players[i].allin:
+                _str = 'A  '
             else:
                 _str = '   '
 
@@ -326,6 +322,8 @@ class PokerServer:
         disp  = '---------------------- You ---------------------\n\n'
         if self.g.players[player].folded:
             _str = 'Folded (%s)'%(pu.hand_to_str(self.g.players[player].hand))
+        elif self.g.players[player].allin:
+            _str = 'All-in (%s)'%(pu.hand_to_str(self.g.players[player].hand))
         else:
             _str = '%s'%(pu.hand_to_str(self.g.players[player].hand))
 
@@ -364,6 +362,9 @@ def main():
     server = PokerServer(nplayers,host,port)
 
     server.init_game(100,(1,2,0))
+    # server.g.set_stack(0,50)
+    # server.g.set_stack(1,100)
+    # server.g.set_stack(2,200)
     while True:
         server.single_game()
         # time.sleep(5.0)
