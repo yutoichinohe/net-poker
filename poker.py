@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os, math, commands
-import random, itertools
+import random, itertools, copy
 import numpy as np
 from datetime import datetime
 
@@ -37,6 +37,7 @@ ShowDown = 3
 #### Class, Function
 
 class Player:
+
     def __init__(self,name='',stack=0,hand=[]):
         self.name   = name
         self.stack  = stack
@@ -49,6 +50,8 @@ class Player:
 
 
 class Game:
+
+    ### game control
 
     def __init__(self,nplayers,init_stack=500,blinds=(1,2,0)):
         if nplayers > 23:
@@ -73,22 +76,16 @@ class Game:
         self.reset()
 
 
-
     def reset(self):
         self.bets           = []
-        self.pot            = 0
-        self.current_pot    = 0
-
+        self.pot            = {}
         self.stage          = Deal
-
         self.current_player = 0
-
         self.flop           = []
         self.turn           = []
         self.river          = []
         self.board          = []
-
-        self.winners        = []
+        self.winners        = {}
         self.best_hands     = []
 
 
@@ -97,14 +94,13 @@ class Game:
         self.button = (self.button+1)%self.nplayers
 
         d = pu.Deck()
-        for i in xrange(self.nplayers):
-            self.players[i].hand = d.draw_top(2)
-            self.players[i].best_hand = []
-            self.players[i].folded = False
-            self.players[i].allin = False
-            self.players[i].available_actions = []
-            self.players[i].at_least_one_action = False
-
+        for x in self.players:
+            x.hand = d.draw_top(2)
+            x.best_hand = []
+            x.folded = False
+            x.allin = False
+            x.available_actions = []
+            x.at_least_one_action = False
 
         self.clear_bets()
 
@@ -127,55 +123,46 @@ class Game:
 
 
     def proceed(self):
+        self.reset_minimum()
+        self.collect_pot()
+
         if self.stage == Deal:
-            self.reset_minimum()
-            self.collect_pot()
             self.stage = Preflop
             self.next_player(candidate=(self.sb+2)%self.nplayers)
             self.a_bet(self.sb,self.blinds[0],ante=True)
             self.a_bet(self.bb,self.blinds[1],ante=True)
-            self.update_available_actions()
-            self.reset_at_least_one_action()
-
         elif self.stage == Preflop:
-            self.reset_minimum()
-            self.collect_pot()
             self.stage = Flop
             self.next_player(candidate=(self.button+1)%self.nplayers)
             self.board = self.board + self.flop
-            self.update_available_actions()
-            self.reset_at_least_one_action()
-
         elif self.stage == Flop:
-            self.reset_minimum()
-            self.collect_pot()
             self.stage = Turn
             self.next_player(candidate=(self.button+1)%self.nplayers)
             self.board = self.board + self.turn
-            self.update_available_actions()
-            self.reset_at_least_one_action()
-
         elif self.stage == Turn:
-            self.reset_minimum()
-            self.collect_pot()
             self.stage = River
             self.next_player(candidate=(self.button+1)%self.nplayers)
             self.board = self.board + self.river
-            self.update_available_actions()
-            self.reset_at_least_one_action()
+
+        self.update_available_actions()
+        self.reset_at_least_one_action()
 
 
     def showdown(self):
-        best_hands = []
-        for x in self.players:
-            if not x.folded:
-                best_hands.append(pu.best_hand(x.hand,self.board))
-                x.best_hand = pu.best_hand(x.hand,self.board)
-            else:
-                best_hands.append(([],-1))
-                x.best_hand = ([],-1)
+        self.assign_best_hands()
+        for k in self.pot.keys():
+            l = []
+            for i in k:
+                if not self.players[i].folded:
+                    l.append(i)
 
-        current_best = [0]
+            bests = self.showdown_players(l)
+            self.winners[tuple(l)] = bests
+
+
+    def showdown_players(self,players_i_list):
+        best_hands = [self.best_hands[i] for i in players_i_list]
+        current_best = [players_i_list[0]]
         current_best_hand = [best_hands[0]]
         for ii in xrange(len(best_hands)-1):
             i = ii+1
@@ -183,23 +170,25 @@ class Game:
             if headsup == 1:
                 pass
             elif headsup == 0:
-                current_best.append(i)
+                current_best.append(players_i_list[i])
                 current_best_hand.append(best_hands[i])
             else:
-                current_best = [i]
+                current_best = [players_i_list[i]]
                 current_best_hand = [best_hands[i]]
 
-        self.winners = current_best
-        self.best_hands = current_best_hand
+        return current_best
 
 
-    def set_blinds(self,blinds):
-        self.blinds = blinds
-        self.minimum_bet = blinds[1]
+    def assign_best_hands(self):
+        self.best_hands = []
+        for x in self.players:
+            if not x.folded:
+                _bh = pu.best_hand(x.hand,self.board)
+            else:
+                _bh = ([],-1)
 
-
-    def set_stack(self,player,stack):
-        self.players[player].stack = stack
+            self.best_hands.append(_bh)
+            x.best_hand = _bh
 
 
     def update_available_actions(self):
@@ -250,87 +239,48 @@ class Game:
     #                 x.available_actions = [Fold,Call,Raise]
 
 
-    def is_stage_done(self):
-        if [x.folded for x in self.players].count(False) == 1:
-            for i in xrange(self.nplayers):
-                if not self.players[i].folded:
-                    self.winners.append(i)
-
-            return AllFold
-
-        if (all([x.folded or x.at_least_one_action or x.allin for x in self.players]) or
-            [x.folded or x.allin for x in self.players].count(False) == 1):
-            _lst = []
-            _maxallin = 0
-            for i in xrange(self.nplayers):
-                if self.players[i].allin and self.bets[i] > _maxallin:
-                    _maxallin = self.bets[i]
-
-                if not (self.players[i].folded or self.players[i].allin):
-                    _lst.append(self.bets[i])
-
-            if not _lst or max(_lst) == min(_lst) and min(_lst) >= _maxallin:
-                if self.stage == River:
-                    return ShowDown
-                else:
-                    return StageEnd
-
-        return False
-
-
-    def stage_str(self):
-        if self.stage == Deal:
-            return 'Deal'
-        elif self.stage == Preflop:
-            return 'Preflop'
-        elif self.stage == Flop:
-            return 'Flop'
-        elif self.stage == Turn:
-            return 'Turn'
-        elif self.stage == River:
-            return 'River'
-
-
     def adjust(self,stagedone):
         if stagedone == AllFold:
             self.collect_pot()
-            self.players[self.winners[0]].stack += self.pot
-            self.action_history_update('%s won the pot (+ %d)'%(self.players[self.winners[0]].name,self.pot))
+            _val = sum(self.pot.values())
+            _wnr = self.players[self.winners.values()[0]]
+            _wnr.stack += _val
+            self.action_history_update('%s won the pot (+ %d)'%(_wnr.name,_val))
 
         elif stagedone == ShowDown:
             self.collect_pot()
-            n = len(self.winners)
-            if n == 1:
-                self.players[self.winners[0]].stack += self.pot
-                self.action_history_update(
-                    '%s won the pot by showdown (+ %d)'%(self.players[self.winners[0]].name,self.pot))
-                self.action_history_update(
-                    '    hand : %s (%s)'%(pu.hand_to_str(self.players[self.winners[0]].best_hand[0]),
-                                          pu.handrank_to_str(self.players[self.winners[0]].best_hand[1])))
-            else:
-                p = self.pot
-                q = p / n
-                r = p % n
-                s = self.sb
-                while p > 0:
-                    if s in self.winners:
-                        self.players[s].stack += q
-                        p -= q
-                        pp = q
-                        if r > 0:
-                            self.players[s].stack += 1
-                            r -= 1
-                            p -= 1
-                            pp += 1
+            for k,v in self.winners.items():
+                n = len(v)
+                if n == 1:
+                    _val = self.pot[k]
+                    _wnr = self.players[v[0]]
+                    _wnr.stack += _val
+                    self.action_history_update('%s won the pot by showdown (+ %d)'%(_wnr.name,_val))
+                    self.action_history_update('    hand : %s (%s)'%(pu.hand_to_str(_wnr.best_hand[0]),
+                                                                     pu.handrank_to_str(_wnr.best_hand[1])))
+                else:
+                    p = self.pot[k]
+                    q = p / n
+                    r = p % n
+                    s = self.sb
+                    while p > 0:
+                        if s in v:
+                            self.players[s].stack += q
+                            p -= q
+                            pp = q
+                            if r > 0:
+                                self.players[s].stack += 1
+                                r -= 1
+                                p -= 1
+                                pp += 1
 
-                        self.action_history_update(
-                            '%s won the pot by showdown (+ %d)'%(self.players[s].name,pp))
-                        self.action_history_update(
-                            '    hand : %s (%s)'%(pu.hand_to_str(self.players[s].best_hand[0]),
-                                                  pu.handrank_to_str(self.players[s].best_hand[1])))
+                            self.action_history_update(
+                                '%s won the pot by showdown (+ %d)'%(self.players[s].name,pp))
+                            self.action_history_update(
+                                '    hand : %s (%s)'%(pu.hand_to_str(self.players[s].best_hand[0]),
+                                                      pu.handrank_to_str(self.players[s].best_hand[1])))
 
-                    s = (s+1)%self.nplayers
-
+                        s = (s+1)%self.nplayers
 
 
     ### player action
@@ -348,7 +298,6 @@ class Game:
         _dif = _max - _cur
         self.bets[player] += _dif
         self.players[player].stack -= _dif
-        self.update_current_pot()
         self.update_available_actions()
         self.players[player].at_least_one_action = True
         if self.players[player].stack == 0:
@@ -363,7 +312,6 @@ class Game:
     def a_bet(self,player,value,ante=False):
         self.bets[player] += value
         self.players[player].stack -= value
-        self.update_current_pot()
         self.update_available_actions()
         self.players[player].at_least_one_action = True
         self.minimum_raise = value+value
@@ -380,7 +328,6 @@ class Game:
         _dif = value - _cur
         self.bets[player] += _dif
         self.players[player].stack -= _dif
-        self.update_current_pot()
         self.update_available_actions()
         self.players[player].at_least_one_action = True
         self.minimum_raise = 2*value-_max
@@ -388,19 +335,6 @@ class Game:
             self.players[player].allin = True
 
         self.action_history_update('%s raised to %d'%(self.players[player].name,value))
-
-
-    # def a_raiseby(self,player,value):
-    #     _max = max(self.bets)
-    #     _cur = self.bets[player]
-    #     _dif = _max + value - _cur
-    #     self.bets[player] += _dif
-    #     self.players[player].stack -= _dif
-    #     self.update_current_pot()
-    #     self.update_available_actions()
-    #     self.players[player].at_least_one_action = True
-    #     self.minimum_raise = value+_dif
-    #     self.action_history_update('%s raised by %d'%(self.players[player].name,value))
 
 
     # def a_allin(self,player):
@@ -427,12 +361,56 @@ class Game:
 
 
     def collect_pot(self):
-        self.pot += sum(self.bets)
+        _entitled = []
+        for i in xrange(self.nplayers):
+            if self.players[i].allin:
+                _bet = self.bets[i]
+                _sum = 0
+                for b in self.bets:
+                    if b <= _bet:
+                        _sum += b
+                    else:
+                        _sum += _bet
+
+                _entitled.append((i,_sum))
+
+            elif self.players[i].folded:
+                pass
+
+            else:
+                _entitled.append((i,sum(self.bets)))
+
+        _entitled_sorted = sorted(_entitled, key=lambda x: x[1])
+        _notfolded = sorted([x[0] for x in _entitled])
+
+        for i in xrange(len(_entitled_sorted)):
+            if all([x[1]<=0 for x in _entitled_sorted]):
+                break
+
+            _v = _entitled_sorted[i][1]
+            if _v == 0:
+                _notfolded.remove(_entitled_sorted[i][0])
+                continue
+
+            self.pot[tuple(_notfolded)] = self.pot.get(tuple(_notfolded),0) + _v
+            _entitled_sorted = [(x[0],x[1]-_v) for x in _entitled_sorted]
+            _notfolded.remove(_entitled_sorted[i][0])
+
+        self.arrange_pot()
         self.clear_bets()
 
 
-    def update_current_pot(self):
-        self.current_pot = self.pot + sum(self.bets)
+    def arrange_pot(self):
+        p = {}
+        for k,v in self.pot.items():
+            l = []
+            for i in k:
+                if not self.players[i].folded:
+                    l.append(i)
+
+            p[tuple(l)] = p.get(tuple(l),0) + v
+
+        self.pot = p
 
 
     def next_player(self, candidate=-1):
@@ -464,6 +442,63 @@ class Game:
     def reset_minimum(self):
         self.minimum_bet = self.blinds[1]
         self.minimum_raise = 0
+
+
+    ### accessors, interfaces
+
+    def is_stage_done(self):
+        if [x.folded for x in self.players].count(False) == 1:
+            winner = -1
+            for i in xrange(self.nplayers):
+                if not self.players[i].folded:
+                    winner = i
+                    break
+
+            for k in self.pot.keys():
+                self.winners[k] = winner
+
+            return AllFold
+
+        if (all([x.folded or x.at_least_one_action or x.allin for x in self.players]) or
+            [x.folded or x.allin for x in self.players].count(False) == 1):
+            _lst = []
+            _maxallin = 0
+            for i in xrange(self.nplayers):
+                if self.players[i].allin and self.bets[i] > _maxallin:
+                    _maxallin = self.bets[i]
+
+                if not (self.players[i].folded or self.players[i].allin):
+                    _lst.append(self.bets[i])
+
+            if not _lst or max(_lst) == min(_lst) and min(_lst) >= _maxallin:
+                if self.stage == River:
+                    return ShowDown
+                else:
+                    return StageEnd
+
+        return False
+
+
+    def set_blinds(self,blinds):
+        self.blinds = blinds
+        self.minimum_bet = blinds[1]
+
+
+    def set_stack(self,player,stack):
+        self.players[player].stack = stack
+
+
+    def stage_str(self):
+        if self.stage == Deal:
+            return 'Deal'
+        elif self.stage == Preflop:
+            return 'Preflop'
+        elif self.stage == Flop:
+            return 'Flop'
+        elif self.stage == Turn:
+            return 'Turn'
+        elif self.stage == River:
+            return 'River'
 
 
 

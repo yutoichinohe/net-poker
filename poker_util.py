@@ -28,6 +28,7 @@ StraightFlush = 8
 #### Class, Function
 
 class Deck:
+
     def __init__(self):
         self.cards = [(r,s) for s in Suits for r in Ranks]
         self.shuffle()

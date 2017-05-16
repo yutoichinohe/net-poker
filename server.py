@@ -81,7 +81,6 @@ class WorkerThread(threading.Thread):
                     self.op = ''
 
 
-
             self.csock.close()
             print('Bye-Bye: {0}:{1}'.format(self.caddr, self.cport))
 
@@ -148,6 +147,7 @@ class WorkerThread(threading.Thread):
 
 
 class PokerServer:
+
     def __init__(self,nplayers,host,port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
@@ -179,7 +179,6 @@ class PokerServer:
             self.g.players[i].name = self.threads[i].name
 
 
-
     def single_game(self):
         self.g.prepare()
         self.sendall_situation()
@@ -209,12 +208,13 @@ class PokerServer:
                 self.g.next_player()
                 self.sendall_situation()
 
-            if self.g.is_stage_done() == poker.AllFold:
+            isd = self.g.is_stage_done()
+            if isd == poker.AllFold:
                 break
-            elif self.g.is_stage_done() == poker.StageEnd:
+            elif isd == poker.StageEnd:
                 self.g.proceed()
                 self.sendall_situation()
-            elif self.g.is_stage_done() == poker.ShowDown:
+            elif isd == poker.ShowDown:
                 self.g.showdown()
                 break
 
@@ -313,8 +313,12 @@ class PokerServer:
                     s=self.g.bets[i],ss=self.g.players[i].stack,c=' ',n=9,nn=10)
 
         disp += '\n'
-        disp += '        Total pot       :   %-11s\n\n'%(self.g.current_pot)
-        disp += '{s:{c}^{n}}\n\n'.format(s=pu.hand_to_str(self.g.board),c=' ',n=48)
+        if not showdown:
+            disp += '        side pot               enitled          \n\n'
+            for k,v in self.g.pot.items():
+                disp += '       %11s      : %s\n'%(v,','.join([self.g.players[i].name for i in k]))
+
+        disp += '\n{s:{c}^{n}}\n\n'.format(s=pu.hand_to_str(self.g.board),c=' ',n=48)
         return disp
 
 
@@ -329,9 +333,7 @@ class PokerServer:
 
         disp += '{s:{c}^{n}}\n\n'.format(s=_str,c=' ',n=48)
         disp += 'Bet           {s:{c}^{n}} /   {ss:{c}^{nn}}     Stack\n\n'.format(
-            s=self.g.bets[player],
-            ss=self.g.players[player].stack,
-            c=' ',n=9,nn=10)
+            s=self.g.bets[player],ss=self.g.players[player].stack,c=' ',n=9,nn=10)
         return disp
 
 
@@ -349,28 +351,16 @@ class PokerServer:
 
 
 
-
-
-
-
-
-
-
-
-
 def main():
+
     server = PokerServer(nplayers,host,port)
 
-    server.init_game(100,(1,2,0))
-    # server.g.set_stack(0,50)
-    # server.g.set_stack(1,100)
-    # server.g.set_stack(2,200)
+    server.init_game(100,(4,8,1))
+    server.g.set_stack(1,50)
+    server.g.set_stack(2,100)
+    server.g.set_stack(0,200)
     while True:
         server.single_game()
-        # time.sleep(5.0)
-
-
-
 
 
 
