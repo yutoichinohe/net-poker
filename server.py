@@ -358,9 +358,9 @@ def main():
     server = PokerServer(nplayers,host,port)
 
     server.init_game(100,(4,8,1))
-    server.g.set_stack(1,50)
-    server.g.set_stack(2,100)
-    server.g.set_stack(0,200)
+    # server.g.set_stack(1,50)
+    # server.g.set_stack(2,100)
+    # server.g.set_stack(0,200)
     while True:
         server.single_game()
 

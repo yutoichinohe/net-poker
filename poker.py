@@ -190,22 +190,6 @@ class Game:
             x.best_hand = _bh
 
 
-    # def update_available_actions(self):
-    #     if max(self.bets) == 0:
-    #         for x in self.players:
-    #             x.available_actions = [Fold,Check,Bet]
-
-    #     elif self.stage == Preflop and max(self.bets) == self.blinds[1]:
-    #         for x in self.players:
-    #             x.available_actions = [Fold,Call,Raise]
-
-    #         self.players[self.bb].available_actions = [Fold,Check,Raise]
-
-    #     else:
-    #         for x in self.players:
-    #             x.available_actions = [Fold,Call,Raise]
-
-
     def update_available_actions(self):
         if max(self.bets) == 0:
             for x in self.players:
@@ -257,8 +241,8 @@ class Game:
                     _wnr = self.players[v[0]]
                     _wnr.stack += _val
                     self.action_history_update('%s won the pot by showdown (+ %d)'%(_wnr.name,_val))
-                    self.action_history_update('    hand : %s (%s)'%(pu.hand_to_str(_wnr.best_hand[0]),
-                                                                     pu.handrank_to_str(_wnr.best_hand[1])))
+                    self.action_history_update('       %s  (%s)'%(pu.hand_to_str(_wnr.best_hand[0]),
+                                                                  pu.handrank_to_str(_wnr.best_hand[1])))
                 else:
                     p = self.pot[k]
                     q = p / n
@@ -278,8 +262,8 @@ class Game:
                             self.action_history_update(
                                 '%s won the pot by showdown (+ %d)'%(self.players[s].name,pp))
                             self.action_history_update(
-                                '    hand : %s (%s)'%(pu.hand_to_str(self.players[s].best_hand[0]),
-                                                      pu.handrank_to_str(self.players[s].best_hand[1])))
+                                '       %s  (%s)'%(pu.hand_to_str(self.players[s].best_hand[0]),
+                                                   pu.handrank_to_str(self.players[s].best_hand[1])))
 
                         s = (s+1)%self.nplayers
 
@@ -348,16 +332,17 @@ class Game:
         _value = self.bets[player]
 
         if _to_call > 0:
-            if _value >= _to_call: ## raise failed -- call+extra
+            if _value >= _to_call:
                 self.minimum_raise = self.minimum_raise+_value-_to_call
-            else: ## call failed -- fold(allin)
-                pass
-        else: ## bet failed -- check+extra
+
+        else:
             self.minimum_raise = self.minimum_bet+_value
 
         self.update_available_actions()
         self.players[player].at_least_one_action = True
         self.players[player].allin = True
+
+        self.action_history_update('%s is all-in with %d'%(self.players[player].name,_value))
 
 
     ### utilities
