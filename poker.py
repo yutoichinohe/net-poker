@@ -279,6 +279,9 @@ class Game:
 
     def a_call(self,player):
         _max = max(self.bets)
+        if self.stage == Preflop and max(self.bets) < self.blinds[1]:
+            _max = self.blinds[1]
+
         _cur = self.bets[player]
         _dif = _max - _cur
         self.bets[player] += _dif
@@ -295,8 +298,12 @@ class Game:
 
 
     def a_bet(self,player,value,ante=False):
-        self.bets[player] += value
-        self.players[player].stack -= value
+        _value = value
+        if ante and self.players[player].stack < value:
+            _value = self.players[player].stack
+
+        self.bets[player] += _value
+        self.players[player].stack -= _value
         self.minimum_raise = value+value
         self.update_available_actions()
         self.players[player].at_least_one_action = True
@@ -490,10 +497,3 @@ class Game:
             return 'Turn'
         elif self.stage == River:
             return 'River'
-
-
-
-
-
-# if __name__ == '__main__':
-#     sys.exit(1)
