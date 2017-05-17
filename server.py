@@ -56,7 +56,7 @@ class WorkerThread(threading.Thread):
                         self.send_message('Action? (%s) : '%self.buffer[0])
                         self.action = self.recv_message().strip().lower()
                         if self.action in self.buffer[1]:
-                            if self.action == 'f' or self.action == 'c':
+                            if self.action == 'f' or self.action == 'c' or self.action == 'a':
                                 pass
                             elif self.action == 'b':
                                 self.loop_until_valid_value(self.minimum_bet)
@@ -203,6 +203,8 @@ class PokerServer:
                     self.g.a_bet(cp,_v)
                 elif _a == 'r':
                     self.g.a_raiseto(cp,_v)
+                elif _a == 'a':
+                    self.g.a_allin(cp)
 
                 self.threads[cp].cleanup_action()
                 self.g.next_player()
@@ -261,9 +263,9 @@ class PokerServer:
             _str += '[R]aise '
             _lst.append('r')
 
-        # if poker.Allin in available_actions:
-        #     _str += '[A]llin '
-        #     _lst.append('a')
+        if poker.Allin in available_actions:
+            _str += '[A]llin '
+            _lst.append('a')
 
         return _str.strip(), _lst
 
