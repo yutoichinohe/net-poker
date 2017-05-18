@@ -46,6 +46,7 @@ class Player:
         self.allin = False
         self.available_actions = []
         self.at_least_one_action = False
+        self.eliminated = False
 
 
 class Game:
@@ -53,10 +54,8 @@ class Game:
     ### game control
 
     def __init__(self,nplayers,init_stack=500,blinds=(1,2,0)):
-        if nplayers > 23:
-            raise RuntimeError, 'too many players'
-        elif nplayers < 2:
-            raise RuntimeError, 'find a friend'
+        if nplayers > 23 or nplayers < 2:
+            raise RuntimeError, 'invalid player number'
         else:
             self.nplayers = nplayers
 
@@ -65,6 +64,9 @@ class Game:
         for i in xrange(nplayers):
             self.players.append(Player(stack=init_stack))
             self.zerobets.append(0)
+
+        # self.ininplayers = nplayers
+        # self.allplayers = [x for x in self.players]
 
         self.minimum_bet   = 0
         self.minimum_raise = 0
@@ -78,6 +80,7 @@ class Game:
     def reset(self):
         self.bets           = []
         self.pot            = {}
+        self.pot[tuple(xrange(self.nplayers))] = 0
         self.stage          = Deal
         self.current_player = 0
         self.flop           = []
@@ -90,6 +93,19 @@ class Game:
 
     def prepare(self):
         self.reset()
+
+        # _plr = []
+        # _nplr = self.nplayers
+        # for x in self.players:
+        #     if x.eliminated:
+        #         _nplr -= 1
+        #     else:
+        #         _plr.append(x)
+
+        # self.players = _plr
+        # self.nplayers = _nplr
+
+
         self.button = (self.button+1)%self.nplayers
 
         d = pu.Deck()
@@ -268,6 +284,12 @@ class Game:
                         s = (s+1)%self.nplayers
 
 
+        for x in self.players:
+            if x.stack == 0:
+                x.eliminated = True
+                self.action_history_update('%s is eliminated'%(x.name))
+
+
     ### player action
 
     def a_fold(self,player):
@@ -377,6 +399,7 @@ class Game:
 
             else:
                 _entitled.append((i,sum(self.bets)))
+
 
         _entitled_sorted = sorted(_entitled, key=lambda x: x[1])
         _notfolded = sorted([x[0] for x in _entitled])

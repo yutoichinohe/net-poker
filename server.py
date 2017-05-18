@@ -9,9 +9,12 @@ import poker_util as pu
 
 # argvs = sys.argv
 # if len(argvs)-1 < 1:
-#     print 'usage : %s [#players]'%os.path.basename(argvs[0])
+#     print 'usage : %s [nplayers] [host] [port]'%os.path.basename(argvs[0])
 #     quit()
 
+# nplayers = int(argvs[1])
+# host     = argvs[2]
+# port     = int(argvs[3])
 nplayers = 3
 host     = 'localhost'
 port     = 37564
@@ -276,8 +279,10 @@ class PokerServer:
         disp += '-------{s:{c}^{n}}-------'.format(s=_str,n=10,c='-')
         _str = ' ('+'-'.join([str(x) for x in self.g.blinds])+') '
         disp += '{s:{c}^{n}}\n\n'.format(s=_str,n=24,c='-')
-        for i in xrange(self.nplayers):
-            if i == self.g.current_player:
+        for i in xrange(self.nthreads):
+            if self.g.players[i].eliminated:
+                _str = '-  '
+            elif i == self.g.current_player:
                 _str = '*  '
             elif self.g.players[i].folded:
                 _str = 'x  '
@@ -288,7 +293,10 @@ class PokerServer:
 
             disp += _str
             if i == self.g.button:
-                __str = '(BTN)'
+                if i == self.g.sb:
+                    __str = '(BTN,sb)'
+                else:
+                    __str = '(BTN)'
             elif i == self.g.sb:
                 __str = '(sb)'
             elif i == (self.g.sb+1)%self.g.nplayers:
@@ -310,6 +318,8 @@ class PokerServer:
                     disp += '  {s:{c}^{n}}/{ss:{c}^{nn}} Folded\n'.format(
                         s=self.g.bets[i],ss=self.g.players[i].stack,
                         c=' ',n=9,nn=10)
+            elif self.g.players[i].eliminated:
+                disp += '    ---    /    ---\n'
             else:
                 disp += '  {s:{c}^{n}}/{ss:{c}^{nn}}\n'.format(
                     s=self.g.bets[i],ss=self.g.players[i].stack,c=' ',n=9,nn=10)
@@ -326,7 +336,9 @@ class PokerServer:
 
     def player_display(self,player):
         disp  = '---------------------- You ---------------------\n\n'
-        if self.g.players[player].folded:
+        if self.g.players[player].eliminated:
+            _str = 'Eliminated'
+        elif self.g.players[player].folded:
             _str = 'Folded (%s)'%(pu.hand_to_str(self.g.players[player].hand))
         elif self.g.players[player].allin:
             _str = 'All-in (%s)'%(pu.hand_to_str(self.g.players[player].hand))
@@ -352,22 +364,14 @@ class PokerServer:
 
 
 
-
 def main():
-
     server = PokerServer(nplayers,host,port)
-
-    server.init_game(100,(24,48,8))
-    server.g.set_stack(1,500)
-    server.g.set_stack(2,1000)
-    server.g.set_stack(0,20)
+    server.init_game(100,(1,2,0))
+    # server.g.set_stack(1,500)
+    # server.g.set_stack(2,1000)
+    # server.g.set_stack(0,20)
     while True:
         server.single_game()
-
-
-
-
-
 
 
 
