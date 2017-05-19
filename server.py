@@ -39,12 +39,12 @@ class WorkerThread(threading.Thread):
 
     def run(self):
         while True:
-            time.sleep(0.001)
+            time.sleep(0.01)
             self.csock, (self.caddr, self.cport) = self.ssock.accept()
             print('New client: {0}:{1}'.format(self.caddr, self.cport))
 
             while True:
-                time.sleep(0.001)
+                time.sleep(0.01)
                 if self.op == 'askname':
                     self.send_message('Name? : ')
                     self.name = self.recv_message().strip()
