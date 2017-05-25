@@ -223,8 +223,10 @@ class PokerServer:
                 self.g.showdown()
                 break
 
-        self.g.adjust(self.g.is_stage_done())
-        self.sendall_situation(self.g.is_stage_done())
+
+        isd = self.g.is_stage_done()
+        self.g.adjust(isd)
+        self.sendall_situation(isd)
 
         [x.press_return() for x in self.threads]
         while not all([x.ready for x in self.threads]):
@@ -299,7 +301,7 @@ class PokerServer:
                     __str = '(BTN)'
             elif i == self.g.sb:
                 __str = '(sb)'
-            elif i == (self.g.sb+1)%self.g.nplayers:
+            elif i == self.g.bb:
                 __str = '(bb)'
             else:
                 __str = ''

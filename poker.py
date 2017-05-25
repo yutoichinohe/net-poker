@@ -8,11 +8,9 @@ from datetime import datetime
 import poker_util as pu
 
 #### Constant
-
 ActionHistoryLength = 1024
 
 ## Stage
-
 Deal    = 1
 Preflop = 2
 Flop    = 3
@@ -20,7 +18,6 @@ Turn    = 4
 River   = 5
 
 ## Available actions
-
 Fold  = 1
 Check = 2
 Call  = 3
