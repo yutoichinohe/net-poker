@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, math, commands
-import time, socket, threading
+import time, socket, threading, datetime
 
 import poker
 import poker_util as pu
@@ -220,6 +220,7 @@ class PokerServer:
                 self.g.proceed()
                 self.sendall_situation()
             elif isd == poker.ShowDown:
+                self.g.collect_pot()
                 self.g.showdown()
                 break
 
@@ -367,14 +368,24 @@ class PokerServer:
 
 
 def main():
+    init_time = datetime.datetime.now()
+    init_stack = 400
+    init_blinds = (1,2,0)
+
     server = PokerServer(nplayers,host,port)
-    server.init_game(100,(1,2,0))
+    server.init_game(init_stack,init_blinds)
     # server.g.set_stack(1,500)
     # server.g.set_stack(2,1000)
-    # server.g.set_stack(0,20)
-    while True:
-        server.single_game()
+    # server.g.set_stack(0,100)
 
+    current_stage = 0
+    while True:
+        now = datetime.datetime.now()
+        tdiff = (now - init_time).seconds
+        current_stage = tdiff / 60
+
+        server.g.set_blinds(tuple([x*2**current_stage for x in init_blinds]))
+        server.single_game()
 
 
 if __name__ == '__main__':

@@ -281,6 +281,11 @@ class Game:
                         s = (s+1)%self.nplayers
 
 
+            # for k,v in self.pot.items():
+            #     if len(k) == 1:
+            #         self.players[k[0]].stack += v
+
+
         for x in self.players:
             if x.stack == 0:
                 x.eliminated = True
