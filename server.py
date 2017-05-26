@@ -8,18 +8,19 @@ import poker
 import poker_util as pu
 import blindgen as bg
 
-# argvs = sys.argv
-# if len(argvs)-1 < 1:
-#     print 'usage : %s [nplayers] [host] [port]'%os.path.basename(argvs[0])
-#     quit()
+argvs = sys.argv
+if len(argvs)-1 < 1:
+    print 'usage : %s [nplayers] [host] [port]'%os.path.basename(argvs[0])
+    quit()
 
-# nplayers = int(argvs[1])
-# host     = argvs[2]
-# port     = int(argvs[3])
+nplayers = int(argvs[1])
+host     = argvs[2]
+port     = int(argvs[3])
 
-nplayers = 3
-host     = 'localhost'
-port     = 37564
+# nplayers = 3
+# host     = 'localhost'
+# port     = 37564
+
 stage_duration_sec = 3*60
 blindgen='PokerStarsSNG'
 #blindgen='FullTiltPokerSNG'
@@ -228,7 +229,6 @@ class PokerServer:
                 self.g.proceed()
                 self.sendall_situation()
             elif isd == poker.ShowDown:
-                self.g.collect_pot()
                 self.g.showdown()
                 break
 

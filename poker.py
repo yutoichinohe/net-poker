@@ -161,6 +161,7 @@ class Game:
 
 
     def showdown(self):
+        self.collect_pot()
         self.assign_best_hands()
         for k in self.pot.keys():
             l = []
@@ -279,11 +280,6 @@ class Game:
                                                    pu.handrank_to_str(self.players[s].best_hand[1])))
 
                         s = (s+1)%self.nplayers
-
-
-            # for k,v in self.pot.items():
-            #     if len(k) == 1:
-            #         self.players[k[0]].stack += v
 
 
         for x in self.players:
