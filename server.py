@@ -22,11 +22,11 @@ port     = int(argvs[3])
 # port     = 37564
 
 stage_duration_sec = 3*60
-blindgen='PokerStarsSNG'
+#blindgen='PokerStarsSNG'
 #blindgen='FullTiltPokerSNG'
 #blindgen='AJPC2014'
 #blindgen='WSOP2016'
-#blindgen='Default'
+blindgen='Default'
 
 action_history_length = 20
 

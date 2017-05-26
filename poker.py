@@ -57,13 +57,12 @@ class Game:
             self.nplayers = nplayers
 
         self.players = []
+        self.player_indices = []
         self.zerobets = []
         for i in xrange(nplayers):
             self.players.append(Player(stack=init_stack))
             self.zerobets.append(0)
-
-        # self.ininplayers = nplayers
-        # self.allplayers = [x for x in self.players]
+            self.player_indices.append(i)
 
         self.minimum_bet   = 0
         self.minimum_raise = 0
@@ -77,7 +76,7 @@ class Game:
     def reset(self):
         self.bets           = []
         self.pot            = {}
-        self.pot[tuple(xrange(self.nplayers))] = 0
+        self.pot[tuple(self.player_indices)] = 0
         self.stage          = Deal
         self.current_player = 0
         self.flop           = []
@@ -127,7 +126,7 @@ class Game:
             self.sb = (self.button+1)%self.nplayers
             self.bb = (self.sb+1)%self.nplayers
 
-        [self.a_bet(x,self.blinds[2],ante=True) for x in xrange(self.nplayers)]
+        [self.a_bet(x,self.blinds[2],ante=True) for x in self.player_indices]
         self.proceed()
         self.update_available_actions()
         self.reset_at_least_one_action()
@@ -213,7 +212,7 @@ class Game:
                     x.available_actions = [Fold,Check,Bet]
 
         elif self.stage == Preflop and max(self.bets) == self.blinds[1]:
-            for i in xrange(self.nplayers):
+            for i in self.player_indices:
                 x = self.players[i]
                 if x.stack+self.bets[i] <= max(self.bets):
                     x.available_actions = [Fold,Allin]
@@ -228,7 +227,7 @@ class Game:
                 self.players[self.bb].available_actions = [Fold,Check,Raise]
 
         else:
-            for i in xrange(self.nplayers):
+            for i in self.player_indices:
                 x = self.players[i]
                 if x.stack+self.bets[i] <= max(self.bets):
                     x.available_actions = [Fold,Allin]
@@ -380,7 +379,7 @@ class Game:
 
     def collect_pot(self):
         _entitled = []
-        for i in xrange(self.nplayers):
+        for i in self.player_indices:
             if self.players[i].allin:
                 _bet = self.bets[i]
                 _sum = 0
@@ -468,7 +467,7 @@ class Game:
     def is_stage_done(self):
         if [x.folded for x in self.players].count(False) == 1:
             winner = -1
-            for i in xrange(self.nplayers):
+            for i in self.player_indices:
                 if not self.players[i].folded:
                     winner = i
                     break
@@ -482,7 +481,7 @@ class Game:
             [x.folded or x.allin for x in self.players].count(False) == 1):
             _lst = []
             _maxallin = 0
-            for i in xrange(self.nplayers):
+            for i in self.player_indices:
                 if self.players[i].allin and self.bets[i] > _maxallin:
                     _maxallin = self.bets[i]
 
