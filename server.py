@@ -6,6 +6,7 @@ import time, socket, threading, datetime
 
 import poker
 import poker_util as pu
+import blindgen as bg
 
 # argvs = sys.argv
 # if len(argvs)-1 < 1:
@@ -15,9 +16,16 @@ import poker_util as pu
 # nplayers = int(argvs[1])
 # host     = argvs[2]
 # port     = int(argvs[3])
+
 nplayers = 3
 host     = 'localhost'
 port     = 37564
+stage_duration_sec = 3*60
+blindgen='PokerStarsSNG'
+#blindgen='FullTiltPokerSNG'
+#blindgen='AJPC2014'
+#blindgen='WSOP2016'
+#blindgen='Default'
 
 action_history_length = 20
 
@@ -368,23 +376,22 @@ class PokerServer:
 
 
 def main():
-    init_time = datetime.datetime.now()
-    init_stack = 400
-    init_blinds = (1,2,0)
+
+    bgen = bg.gen_blind_gen(blindgen)
+    init_stack = bgen.init_stack
+    init_blinds = bgen.structure[0]
 
     server = PokerServer(nplayers,host,port)
     server.init_game(init_stack,init_blinds)
+
+    bgen.init(stage_duration_sec)
+
     # server.g.set_stack(1,500)
     # server.g.set_stack(2,1000)
     # server.g.set_stack(0,100)
 
-    current_stage = 0
     while True:
-        now = datetime.datetime.now()
-        tdiff = (now - init_time).seconds
-        current_stage = tdiff / 60
-
-        server.g.set_blinds(tuple([x*2**current_stage for x in init_blinds]))
+        server.g.set_blinds(bgen.get_blinds())
         server.single_game()
 
 
