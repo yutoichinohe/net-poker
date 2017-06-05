@@ -74,6 +74,7 @@ class Game:
 
 
     def reset(self):
+        self.nplayers = len(self.player_indices)
         self.bets           = []
         self.pot            = {}
         self.pot[tuple(self.player_indices)] = 0
