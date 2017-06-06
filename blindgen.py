@@ -1,10 +1,4 @@
-#!/usr/bin/env python
-
-# import sys, os, math, commands
-# import random, itertools, copy
-# import numpy as np
 from datetime import datetime
-
 
 def gen_blind_gen(str):
     if str == 'PokerStarsSNG':

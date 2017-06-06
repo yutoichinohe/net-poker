@@ -1,34 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, os, math, commands
-import time, socket, threading, datetime
+import sys, os
+import time, socket, threading
 
 import poker
 import poker_util as pu
 import blindgen as bg
+import setup
 
 argvs = sys.argv
 if len(argvs)-1 < 1:
-    print 'usage : %s [nplayers] [host] [port]'%os.path.basename(argvs[0])
+    print 'usage : %s [nplayers] [host (e.g. localhost)] [port (e.g. 37564)]'%os.path.basename(argvs[0])
     quit()
 
 nplayers = int(argvs[1])
 host     = argvs[2]
 port     = int(argvs[3])
 
-# nplayers = 3
-# host     = 'localhost'
-# port     = 37564
 
-stage_duration_sec = 3*60
-#blindgen='PokerStarsSNG'
-#blindgen='FullTiltPokerSNG'
-#blindgen='AJPC2014'
-#blindgen='WSOP2016'
-blindgen='Default'
+stage_duration_sec = setup.StageDurationSec
+blindgen = setup.BlindGen
+action_history_length = setup.ActionHistoryLength
 
-action_history_length = 20
+
+#### Class, Function
 
 class WorkerThread(threading.Thread):
 
@@ -78,7 +74,6 @@ class WorkerThread(threading.Thread):
                                 self.action = ''
                         else:
                             self.action = ''
-
 
                     self.ready = True
                     self.buffer = ''
@@ -235,11 +230,9 @@ class PokerServer:
                 self.g.showdown()
                 break
 
-
         isd = self.g.is_stage_done()
         self.g.adjust(isd)
         self.sendall_situation(isd)
-
 
         _alive = []
         for i in xrange(self.nplayers):
@@ -384,8 +377,9 @@ class PokerServer:
 
 
 
-def main():
+#### Main body
 
+def main():
     bgen = bg.gen_blind_gen(blindgen)
     init_stack = bgen.init_stack
     init_blinds = bgen.structure[0]
@@ -394,10 +388,6 @@ def main():
     server.init_game(init_stack,init_blinds)
 
     bgen.init(stage_duration_sec)
-
-    # server.g.set_stack(1,500)
-    # server.g.set_stack(2,1000)
-    # server.g.set_stack(0,100)
 
     while True:
         server.g.set_blinds(bgen.get_blinds())

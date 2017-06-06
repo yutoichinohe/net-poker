@@ -1,15 +1,10 @@
-#!/usr/bin/env python
-
-import sys, os, math, commands
-import random, itertools, copy
-import numpy as np
 from datetime import datetime
-
 import poker_util as pu
+import setup
+
+action_history_length = setup.ActionHistoryLength
 
 #### Constant
-ActionHistoryLength = 1024
-
 ## Stage
 Deal    = 1
 Preflop = 2
@@ -44,6 +39,7 @@ class Player:
         self.available_actions = []
         self.at_least_one_action = False
         self.eliminated = False
+
 
 
 class Game:
@@ -465,7 +461,7 @@ class Game:
 
 
     def action_history_update(self,history):
-        if len(self.action_history) > 1024:
+        if len(self.action_history) > action_history_length:
             self.action_history.pop(0)
 
         self.action_history.append('[%s]  '%(datetime.now().strftime('%H:%M:%S'))+history)

@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-#!/usr/bin/env python
 
-import sys, os, math, commands
 import random, itertools
-import numpy as np
+import setup
+
+emoji = setup.Emoji
 
 #### Constant
-
-Emoji = False
-
 #        s  h  d  c
 Suits = (0, 1, 2, 3)
 #         A   K   Q  J  T  9  8  7  6  5  4  3  2
@@ -210,7 +207,7 @@ def card_to_str(c):
     else:
         tmp += '%d'%(r+2)
 
-    if Emoji:
+    if emoji:
         if s == 0:
             tmp += '♠️ '
         elif s == 1:
