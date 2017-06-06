@@ -2,6 +2,7 @@ from datetime import datetime
 import poker_util as pu
 import setup
 
+#### setup
 action_history_length = setup.ActionHistoryLength
 
 #### Constant

@@ -3,6 +3,7 @@
 import random, itertools
 import setup
 
+#### setup
 emoji = setup.Emoji
 
 #### Constant

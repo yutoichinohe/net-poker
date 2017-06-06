@@ -19,6 +19,8 @@ nplayers = int(argvs[1])
 host     = argvs[2]
 port     = int(argvs[3])
 
+
+#### setup
 stage_duration_sec = setup.StageDurationSec
 blindgen = setup.BlindGen
 action_history_length = setup.ActionHistoryLength
