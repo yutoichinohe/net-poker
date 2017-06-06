@@ -240,6 +240,11 @@ class PokerServer:
                 self.threads[i].press_return()
                 _alive.append(i)
 
+        if len(_alive) == 1:
+            self.g.action_history_update('GAME END : %s won the game'%self.g.players[_alive[0]].name)
+            self.sendall_situation()
+            sys.exit()
+
         while not all([x.ready for x in [self.threads[i] for i in _alive]]):
             pass
 
