@@ -9,22 +9,11 @@ import poker_util as pu
 import blindgen as bg
 import setup
 
-argvs = sys.argv
-if len(argvs)-1 != 3:
-    print 'usage : %s [nplayers] [host (e.g. localhost)] [port (e.g. 37564)]'%os.path.basename(argvs[0])
-    print '        use NETCAT to connect to the server: nc localhost 37564'
-    quit()
-
-nplayers = int(argvs[1])
-host     = argvs[2]
-port     = int(argvs[3])
-
-
 #### setup
+
 stage_duration_sec = setup.StageDurationSec
 blindgen = setup.BlindGen
 action_history_length = setup.ActionHistoryLength
-
 
 #### Class, Function
 
@@ -245,7 +234,7 @@ class PokerServer:
         if len(_alive) == 1:
             self.g.action_history_update('GAME END : %s won the game'%self.g.players[_alive[0]].name)
             self.sendall_situation()
-            sys.exit()
+            quit()
 
         while not all([x.ready for x in [self.threads[i] for i in _alive]]):
             pass
@@ -390,6 +379,18 @@ class PokerServer:
 #### Main body
 
 def main():
+
+    argvs = sys.argv
+    if len(argvs)-1 != 3:
+        print 'usage : %s [nplayers] [host (e.g. localhost)] [port (e.g. 37564)]'%os.path.basename(argvs[0])
+        print '        use NETCAT to connect to the server: nc localhost 37564'
+        quit()
+
+    nplayers = int(argvs[1])
+    host     = argvs[2]
+    port     = int(argvs[3])
+
+
     bgen = bg.gen_blind_gen(blindgen)
     init_stack = bgen.init_stack
     init_blinds = bgen.structure[0]
