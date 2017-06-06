@@ -103,7 +103,7 @@ class Game:
         # self.nplayers = _nplr
 
 
-        self.button = (self.button+1)%self.nplayers
+        self.button = self.plus1(self.button)
 
         d = pu.Deck()
         for x in self.players:
@@ -122,10 +122,10 @@ class Game:
 
         if self.nplayers == 2:
             self.sb = self.button
-            self.bb = (self.sb+1)%self.nplayers
+            self.bb = self.plus1(self.sb)
         else:
-            self.sb = (self.button+1)%self.nplayers
-            self.bb = (self.sb+1)%self.nplayers
+            self.sb = self.plus1(self.button)
+            self.bb = self.plus1(self.sb)
 
         [self.a_bet(x,self.blinds[2],ante=True) for x in self.player_indices]
         self.proceed()
@@ -140,20 +140,20 @@ class Game:
 
         if self.stage == Deal:
             self.stage = Preflop
-            self.next_player(candidate=(self.sb+2)%self.nplayers)
+            self.next_player(candidate=self.plusx(self.sb,2))
             self.a_bet(self.sb,self.blinds[0],ante=True)
             self.a_bet(self.bb,self.blinds[1],ante=True)
         elif self.stage == Preflop:
             self.stage = Flop
-            self.next_player(candidate=(self.button+1)%self.nplayers)
+            self.next_player(candidate=self.plus1(self.button))
             self.board = self.board + self.flop
         elif self.stage == Flop:
             self.stage = Turn
-            self.next_player(candidate=(self.button+1)%self.nplayers)
+            self.next_player(candidate=self.plus1(self.button))
             self.board = self.board + self.turn
         elif self.stage == Turn:
             self.stage = River
-            self.next_player(candidate=(self.button+1)%self.nplayers)
+            self.next_player(candidate=self.plus1(self.button))
             self.board = self.board + self.river
 
         self.update_available_actions()
@@ -279,7 +279,7 @@ class Game:
                                 '       %s  (%s)'%(pu.hand_to_str(self.players[s].best_hand[0]),
                                                    pu.handrank_to_str(self.players[s].best_hand[1])))
 
-                        s = (s+1)%self.nplayers
+                        s = self.plus1(s)
 
 
         for x in self.players:
@@ -432,18 +432,28 @@ class Game:
         self.pot = p
 
 
+    def plusx(self,val,x):
+        idx = self.player_indices.index(val)
+        return self.player_indices[(idx+x)%self.nplayers]
+
+
+    def plus1(self,val):
+        return self.plusx(val,1)
+
+
     def next_player(self, candidate=-1):
         if candidate != -1:
             nextp = candidate
         else:
-            nextp = (self.current_player+1)%self.nplayers
+            nextp = self.plus1(self.current_player)
 
 
         if not all([x.folded or x.allin for x in self.players]):
-            while self.players[nextp % self.nplayers].folded or self.players[nextp % self.nplayers].allin:
-                nextp += 1
+            while self.players[nextp].folded or self.players[nextp].allin:
+                nextp = self.plus1(nextp)
 
-        self.current_player = nextp % self.nplayers
+        self.current_player = nextp
+
 
 
     def reset_at_least_one_action(self):
