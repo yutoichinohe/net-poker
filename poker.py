@@ -89,31 +89,30 @@ class Game:
 
 
     def prepare(self):
-        self.reset()
 
-        # _plr = []
-        # _nplr = self.nplayers
-        # for x in self.players:
-        #     if x.eliminated:
-        #         _nplr -= 1
-        #     else:
-        #         _plr.append(x)
-
-        # self.players = _plr
-        # self.nplayers = _nplr
-
-
-        self.button = self.plus1(self.button)
-
-        d = pu.Deck()
         for i in self.player_indices:
             x = self.players[i]
-            x.hand = d.draw_top(2)
+            x.hand = []
             x.best_hand = []
             x.folded = False
             x.allin = False
             x.available_actions = []
             x.at_least_one_action = False
+
+        _idx = []
+        for i in self.player_indices:
+            if not self.players[i].eliminated:
+                _idx.append(i)
+
+        self.player_indices = _idx
+
+        self.reset()
+
+        self.button = self.plus1(self.button)
+
+        d = pu.Deck()
+        for i in self.player_indices:
+            self.players[i].hand = d.draw_top(2)
 
         self.clear_bets()
 
@@ -195,9 +194,8 @@ class Game:
 
     def assign_best_hands(self):
         self.best_hands = []
-        for i in self.player_indices:
-            x = self.players[i]
-            if not x.folded:
+        for x in self.players:
+            if not (x.folded or x.eliminated):
                 _bh = pu.best_hand(x.hand,self.board)
             else:
                 _bh = ([],-1)
@@ -437,7 +435,7 @@ class Game:
     def plusx(self,val,x):
         try:
             idx = self.player_indices.index(val)
-        except AttributeError:
+        except ValueError:
             idx = -1
 
         return self.player_indices[(idx+x)%self.nplayers]

@@ -237,8 +237,14 @@ class PokerServer:
         self.g.adjust(isd)
         self.sendall_situation(isd)
 
-        [x.press_return() for x in self.threads]
-        while not all([x.ready for x in self.threads]):
+
+        _alive = []
+        for i in xrange(self.nplayers):
+            if not self.g.players[i].eliminated:
+                self.threads[i].press_return()
+                _alive.append(i)
+
+        while not all([x.ready for x in [self.threads[i] for i in _alive]]):
             pass
 
 
