@@ -10,14 +10,14 @@ import blindgen as bg
 import setup
 
 argvs = sys.argv
-if len(argvs)-1 < 1:
+if len(argvs)-1 != 3:
     print 'usage : %s [nplayers] [host (e.g. localhost)] [port (e.g. 37564)]'%os.path.basename(argvs[0])
+    print '        use NETCAT to connect to the server: nc localhost 37564'
     quit()
 
 nplayers = int(argvs[1])
 host     = argvs[2]
 port     = int(argvs[3])
-
 
 stage_duration_sec = setup.StageDurationSec
 blindgen = setup.BlindGen
@@ -246,7 +246,10 @@ class PokerServer:
 
     def sendall_situation(self,situ=''):
         for i in xrange(self.nthreads):
-            self.threads[i].send_message('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n')
+            self.threads[i].send_message('\n\n\n\n\n\n\n\n\n\n')
+            self.threads[i].send_message('\n\n\n\n\n\n\n\n\n\n')
+            self.threads[i].send_message('\n\n\n\n\n\n\n\n\n\n')
+            self.threads[i].send_message('\n\n\n\n\n\n\n\n\n\n')
             self.threads[i].send_message(self.action_display())
             if situ == poker.ShowDown:
                 self.threads[i].send_message(self.game_display(showdown=True))
