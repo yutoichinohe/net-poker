@@ -130,7 +130,10 @@ class WorkerThread(threading.Thread):
 
 
     def send_message(self,message):
-        self.csock.sendall(message)
+        try:
+            self.csock.sendall(message)
+        except:
+            pass
 
 
     def recv_message(self):
