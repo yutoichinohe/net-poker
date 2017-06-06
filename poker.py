@@ -284,7 +284,6 @@ class Game:
 
                         s = self.plus1(s)
 
-
         for i in self.player_indices:
             x = self.players[i]
             if x.stack == 0:
@@ -402,7 +401,6 @@ class Game:
             else:
                 _entitled.append((i,sum(self.bets)))
 
-
         _entitled_sorted = sorted(_entitled, key=lambda x: x[1])
         _notfolded = sorted([x[0] for x in _entitled])
 
@@ -455,13 +453,11 @@ class Game:
         else:
             nextp = self.plus1(self.current_player)
 
-
         if not all([x.folded or x.allin for x in [self.players[i] for i in self.player_indices]]):
             while self.players[nextp].folded or self.players[nextp].allin:
                 nextp = self.plus1(nextp)
 
         self.current_player = nextp
-
 
 
     def reset_at_least_one_action(self):
