@@ -106,7 +106,8 @@ class Game:
         self.button = self.plus1(self.button)
 
         d = pu.Deck()
-        for x in self.players:
+        for i in self.player_indices:
+            x = self.players[i]
             x.hand = d.draw_top(2)
             x.best_hand = []
             x.folded = False
@@ -194,7 +195,8 @@ class Game:
 
     def assign_best_hands(self):
         self.best_hands = []
-        for x in self.players:
+        for i in self.player_indices:
+            x = self.players[i]
             if not x.folded:
                 _bh = pu.best_hand(x.hand,self.board)
             else:
@@ -206,7 +208,8 @@ class Game:
 
     def update_available_actions(self):
         if max(self.bets) == 0:
-            for x in self.players:
+            for i in self.player_indices:
+                x = self.players[i]
                 if x.stack <= self.minimum_bet:
                     x.available_actions = [Fold,Check,Allin]
                 else:
@@ -282,7 +285,8 @@ class Game:
                         s = self.plus1(s)
 
 
-        for x in self.players:
+        for i in self.player_indices:
+            x = self.players[i]
             if x.stack == 0:
                 x.eliminated = True
                 self.action_history_update('%s is eliminated'%(x.name))
@@ -433,7 +437,11 @@ class Game:
 
 
     def plusx(self,val,x):
-        idx = self.player_indices.index(val)
+        try:
+            idx = self.player_indices.index(val)
+        except AttributeError:
+            idx = -1
+
         return self.player_indices[(idx+x)%self.nplayers]
 
 
@@ -448,7 +456,7 @@ class Game:
             nextp = self.plus1(self.current_player)
 
 
-        if not all([x.folded or x.allin for x in self.players]):
+        if not all([x.folded or x.allin for x in [self.players[i] for i in self.player_indices]]):
             while self.players[nextp].folded or self.players[nextp].allin:
                 nextp = self.plus1(nextp)
 
@@ -457,7 +465,8 @@ class Game:
 
 
     def reset_at_least_one_action(self):
-        for x in self.players:
+        for i in self.player_indices:
+            x = self.players[i]
             x.at_least_one_action = False
 
 
@@ -476,7 +485,7 @@ class Game:
     ### accessors, interfaces
 
     def is_stage_done(self):
-        if [x.folded for x in self.players].count(False) == 1:
+        if [x.folded for x in [self.players[i] for i in self.player_indices]].count(False) == 1:
             winner = -1
             for i in self.player_indices:
                 if not self.players[i].folded:
@@ -488,8 +497,8 @@ class Game:
 
             return AllFold
 
-        if (all([x.folded or x.at_least_one_action or x.allin for x in self.players]) or
-            [x.folded or x.allin for x in self.players].count(False) == 1):
+        if (all([x.folded or x.at_least_one_action or x.allin for x in [self.players[i] for i in self.player_indices]]) or
+            [x.folded or x.allin for x in [self.players[i] for i in self.player_indices]].count(False) == 1):
             _lst = []
             _maxallin = 0
             for i in self.player_indices:
