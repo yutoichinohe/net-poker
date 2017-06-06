@@ -319,7 +319,18 @@ class PokerServer:
             _str = '%s%s'%(self.g.players[i].name,__str)
             disp += '%-21s:'%(_str)
             if showdown:
-                if not self.g.players[i].folded:
+                if self.g.players[i].eliminated:
+                    _t = pu.hand_to_str(self.g.players[i].hand)
+                    _u = pu.hand_to_str(self.g.players[i].best_hand[0])
+                    _v = pu.handrank_to_str(self.g.players[i].best_hand[1])
+                    if _t and _u and _v:
+                        disp += '  {s:{c}^{n}}/{ss:{c}^{nn}} {t} : {u} ({v})\n'.format(
+                            s=self.g.bets[i],ss=self.g.players[i].stack,
+                            c=' ',n=9,nn=10,t=_t,u=_u,v=_v)
+                    else:
+                        disp += '     ---   /   ---     Eliminated\n'
+
+                elif not self.g.players[i].folded:
                     disp += '  {s:{c}^{n}}/{ss:{c}^{nn}} {t} : {u} ({v})\n'.format(
                         s=self.g.bets[i],ss=self.g.players[i].stack,
                         c=' ',n=9,nn=10,
@@ -331,7 +342,7 @@ class PokerServer:
                         s=self.g.bets[i],ss=self.g.players[i].stack,
                         c=' ',n=9,nn=10)
             elif self.g.players[i].eliminated:
-                disp += '    ---    /    ---\n'
+                disp += '    ---    /   ---\n'
             else:
                 disp += '  {s:{c}^{n}}/{ss:{c}^{nn}}\n'.format(
                     s=self.g.bets[i],ss=self.g.players[i].stack,c=' ',n=9,nn=10)
@@ -349,7 +360,11 @@ class PokerServer:
     def player_display(self,player):
         disp  = '---------------------- You ---------------------\n\n'
         if self.g.players[player].eliminated:
-            _str = 'Eliminated'
+            _hand = pu.hand_to_str(self.g.players[player].hand)
+            if _hand:
+                _str = 'Eliminated (%s)'%(_hand)
+            else:
+                _str = 'Eliminated'
         elif self.g.players[player].folded:
             _str = 'Folded (%s)'%(pu.hand_to_str(self.g.players[player].hand))
         elif self.g.players[player].allin:
